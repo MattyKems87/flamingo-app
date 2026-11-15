@@ -5,7 +5,7 @@
 <body>
 <div id="map"></div>
 <div id="top"><button id="menuBtn" class="round" aria-label="Menu">&#9776;</button>
-<div id="searchWrap"><input id="q" type="search" placeholder="Search Auckland places" autocomplete="off"><ul id="results"></ul></div></div>
+<div id="searchWrap"><input id="q" type="search" placeholder="Search Auckland places" autocomplete="off"><button id="sound" type="button"></button><ul id="results"></ul></div></div>
 <button id="recentre" class="round" aria-label="Recentre on scooter">&#9678;</button>
 <div id="sheets">
 <div id="trip" hidden><b id="tripTitle"></b><small id="tripSub"></small><div class="bar"><i id="bar"></i></div>
@@ -15,6 +15,6 @@
 <div id="scrim" hidden></div>
 <nav id="drawer"><h2>Flamingo</h2><button data-go="map">Map</button><button data-go="activity">Activities</button><button data-go="location">Locations</button></nav>
 <section id="page" hidden></section>
-<div id="splash">Time to leave the nest!</div>
+<div id="intro"><div id="logo"><img id="logoImg" alt=""><svg id="sparkSvg" aria-hidden="true"></svg></div><div id="introTitle">Time to leave the nest!</div><button id="gate">Tap to start</button></div>
 <div id="gem" hidden><div class="gemBox"><h2>Gem picked up!</h2><b id="gemName"></b><p id="gemText"></p><button id="gemClose" class="pill fill">Close</button></div></div>
 <script type="module" src="/src/main.js"></script></body></html>

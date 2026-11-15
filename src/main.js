@@ -1,24 +1,27 @@
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import './style.css';
-import {CONFIG,START,ITEMS,POP,GEMS,GEM_RADIUS} from './data.js';
+import {CONFIG,START,ITEMS,POP,GEMS,GEM_RADIUS,INTRO} from './data.js';
+import {PATH} from './introPath.js';
 
 const $=s=>document.querySelector(s);
 const km=m=>(m/1000).toFixed(1)+' km', mins=s=>Math.max(1,Math.round(s/60));
 const KIND={activity:'Activity',location:'Location',nest:'Nest'};
 function dist(a,b){const R=6371e3,t=Math.PI/180,x=Math.sin((b[1]-a[1])*t/2)**2+Math.cos(a[1]*t)*Math.cos(b[1]*t)*Math.sin((b[0]-a[0])*t/2)**2;return 2*R*Math.asin(Math.sqrt(x));}
 
-let pos=START, here=ITEMS.find(i=>i.id==='mds'), recent=[], trip=null, follow=true;
+let pos=START, here=ITEMS.find(i=>i.id==='mds'), recent=[], trip=null, follow=false;
 const EMPTY={type:'FeatureCollection',features:[]};
 
 // ---------- map ----------
 const map=new maplibregl.Map({container:'map',style:CONFIG.STYLE,center:START,zoom:15.6,maxBounds:CONFIG.BOUNDS,attributionControl:{compact:true}});
-let userMoving=false,ft=null;
-map.on('dragstart',()=>setFollow(false));
-map.on('mousedown',e=>{const o=e.originalEvent;if(o.button===0&&!o.ctrlKey&&!o.shiftKey)setFollow(false);}); // stop following the instant you grab the map
-map.on('touchstart',e=>{clearTimeout(ft);if(e.points.length===1)ft=setTimeout(()=>setFollow(false),120);}); // one finger = pan; two fingers (rotate/zoom) keep following
-map.on('touchend',()=>clearTimeout(ft));map.on('touchcancel',()=>clearTimeout(ft));
-map.on('movestart',e=>{if(e.originalEvent)userMoving=true;});map.on('moveend',()=>{userMoving=false;}); // never fight the user's gesture // panning stops following; rotating or zooming does not
+// Releasing the camera: pressing the map stops following at once. A touch waits 120 ms so a two-finger rotate/zoom keeps following.
+const cc=map.getCanvasContainer();let ft=null;
+cc.addEventListener('pointerdown',e=>{
+  if(e.pointerType==='mouse'){if(e.button===0&&!e.ctrlKey&&!e.shiftKey)setFollow(false);return;}
+  clearTimeout(ft);if(e.isPrimary)ft=setTimeout(()=>setFollow(false),120);
+},true);
+addEventListener('pointerup',()=>clearTimeout(ft));addEventListener('pointercancel',()=>clearTimeout(ft));
+map.on('dragstart',()=>setFollow(false)); // panning stops following; rotating or zooming does not
 map.addControl(new maplibregl.NavigationControl({showZoom:false,visualizePitch:false}),'top-right'); // compass: tap to reset north            // user dragged: stop following until Recentre
 map.on('load',()=>{
   map.addSource('route',{type:'geojson',data:EMPTY});
@@ -58,7 +61,7 @@ function tick(now){
   const dt=(now-trip.last)/1000;trip.last=now;
   if(!trip.paused&&!gemOpen)trip.s=Math.min(trip.total,trip.s+CONFIG.SPEED*dt);
   pos=pointAt(trip,trip.s);scooter.setLngLat(pos);
-  if(follow&&!userMoving&&now>trip.followAt)map.jumpTo({center:pos});
+  if(follow&&!map.isMoving()&&now>trip.followAt)map.jumpTo({center:pos}); // never fight a gesture in progress
   for(const g of GEMS)if(g.ll&&!got.has(g.id)&&dist(pos,g.ll)<GEM_RADIUS)offerGem(g);
   const left=1-trip.s/trip.total;
   $('#bar').style.width=(100-left*100)+'%';
@@ -72,7 +75,7 @@ function arrive(){
 }
 $('#pauseBtn').onclick=()=>{if(!trip)return;trip.paused=!trip.paused;trip.last=performance.now();$('#pauseBtn').textContent=trip.paused?'Resume':'Pause';};
 $('#skipBtn').onclick=()=>{if(trip)trip.s=trip.total;};            // complete instantly
-function setFollow(v){follow=v;const o=v?{around:'center'}:{};map.touchZoomRotate.enable(o);map.scrollZoom.enable(o);} // while following, rotate/zoom around the scooter
+function setFollow(v){if(follow===v)return;follow=v;const o=v?{around:'center'}:{};[map.touchZoomRotate,map.scrollZoom].forEach(h=>{h.disable();h.enable(o);});} // while following, rotate/zoom around the scooter
 function drawRoute(r){if(map.getSource('route'))map.getSource('route').setData({type:'Feature',geometry:{type:'LineString',coordinates:r.coords}});}
 function clearRoute(){if(map.getSource('route'))map.getSource('route').setData(EMPTY);}
 function cancelTrip(){if(!trip)return;trip=null;here=null;clearRoute();$('#trip').hidden=true;setBusy(false);refreshPage();}
@@ -104,11 +107,21 @@ $('#rndAct').onclick=()=>startTrip(pick(['activity']));
 
 // ---------- arrival info ----------
 function showInfo(i,r,mode){
-  const el=$('#info');el.hidden=false;
+  const el=$('#info');el.hidden=false;el.classList.remove('min');
   const btn=mode==='preview'?'<button class="pill fill" id="go">Send scooter</button><button class="pill" id="done">Close</button>':'<button class="pill fill" id="done">'+(mode==='here'?'Close':'Done')+'</button>';
-  el.innerHTML=`<div class="photo ${i.type}"></div><div class="row"><h2>${i.name}</h2><span class="tag">${KIND[i.type]}</span></div>
-  <p class="hook">${i.hook}</p>${r?`<div class="facts"><span>${km(r.dist)}</span><span>${mins(r.dur)} min ride</span></div>`:''}<p>${i.desc}</p><div class="btns">${btn}</div>`;
+  el.innerHTML=`<button class="grab" id="grab" aria-label="Collapse card to see the map" aria-expanded="true"><i></i></button>
+  <div class="row head"><h2>${i.name}</h2><span class="tag">${KIND[i.type]}</span></div>
+  <div class="more"><div class="photo ${i.type}"></div><p class="hook">${i.hook}</p>${r?`<div class="facts"><span>${km(r.dist)}</span><span>${mins(r.dur)} min ride</span></div>`:''}<p>${i.desc}</p><div class="btns">${btn}</div></div>`;
   $('#done').onclick=hideInfo;if($('#go'))$('#go').onclick=()=>startTrip(i,r);
+  // Material "standard bottom sheet" drag handle: drag down/up, tap, or press Enter/Space to collapse or expand. Collapsed = a peek that leaves the map visible.
+  const g=$('#grab');let y0=null,moved=false;
+  const set=min=>{el.classList.toggle('min',min);g.setAttribute('aria-expanded',String(!min));g.setAttribute('aria-label',min?'Expand card':'Collapse card to see the map');};
+  g.onpointerdown=e=>{y0=e.clientY;moved=false;g.setPointerCapture(e.pointerId);};
+  g.onpointermove=e=>{if(y0===null)return;const d=e.clientY-y0;if(Math.abs(d)>24){moved=true;set(d>0);y0=e.clientY;}};
+  g.onpointerup=()=>{if(!moved)set(!el.classList.contains('min'));y0=null;};
+  g.onpointercancel=()=>{y0=null;};
+  g.onclick=e=>{if(e.detail===0)set(!el.classList.contains('min'));}; // keyboard activation
+  el.querySelector('.head').onclick=()=>{if(el.classList.contains('min'))set(false);};
 }
 function hideInfo(){$('#info').hidden=true;clearRoute();} // closing the card removes the pink path
 
@@ -131,7 +144,9 @@ const TITLE={activity:'Activities',location:'Locations'};
 function openDrawer(o){$('#drawer').classList.toggle('open',o);$('#scrim').hidden=!o;}
 $('#menuBtn').onclick=()=>openDrawer(true);$('#scrim').onclick=()=>openDrawer(false);
 $('#drawer').onclick=e=>{const b=e.target.closest('[data-go]');if(b){openDrawer(false);showPage(b.dataset.go==='map'?null:b.dataset.go);}};
-function showPage(kind){const p=$('#page');p.hidden=!kind;if(kind)renderPage(kind);}
+function setActive(k){document.querySelectorAll('#drawer [data-go]').forEach(b=>{const on=b.dataset.go===k;b.classList.toggle('on',on);on?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current');});}
+setActive('map');
+function showPage(kind){const p=$('#page');p.hidden=!kind;if(kind)renderPage(kind);setActive(kind||'map');}
 function renderPage(kind){
   const types=kind==='activity'?['activity']:['location','nest'];let list=ITEMS.filter(i=>types.includes(i.type));
   const pop=ITEMS.filter(i=>types.includes(i.type)&&POP[i.id]).sort((a,b)=>POP[b.id]-POP[a.id]).slice(0,6);
@@ -159,4 +174,59 @@ addEventListener('pointerup',()=>{dEl=null;});
 $('#page').addEventListener('click',e=>{if(moved){e.stopPropagation();e.preventDefault();moved=false;}},true);
 
 // ---------- startup ----------
-setTimeout(()=>$('#splash').remove(),3200); // CSS fades the message in and out
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const asset=p=>import.meta.env.BASE_URL+p;
+// Music uses the Web Audio API because iPhones ignore audio.volume, so fades only work through a gain node.
+let ctx,gain,audio,musicOn=localStorage.getItem('music')!=='off',musicActive=false,stopTimer=null,pauseTimer=null;
+function initAudio(){
+  if(ctx||!INTRO.MUSIC_FILE)return;
+  audio=new Audio(asset(INTRO.MUSIC_FILE));audio.loop=INTRO.MUSIC_LOOP;
+  ctx=new (window.AudioContext||window.webkitAudioContext)();gain=ctx.createGain();gain.gain.value=0;
+  ctx.createMediaElementSource(audio).connect(gain).connect(ctx.destination);
+}
+function ramp(v,ms){if(!ctx)return;const t=ctx.currentTime;gain.gain.cancelScheduledValues(t);gain.gain.setValueAtTime(gain.gain.value,t);gain.gain.linearRampToValueAtTime(v,t+ms/1000);}
+function playMusic(ms){if(!ctx||!musicOn)return;clearTimeout(pauseTimer);ctx.resume();audio.play().catch(()=>{});ramp(INTRO.MUSIC_VOLUME,ms);}
+function fadeMusicOut(){ramp(0,INTRO.MUSIC_FADE_OUT);pauseTimer=setTimeout(()=>{audio&&audio.pause();musicActive=false;},INTRO.MUSIC_FADE_OUT+100);}
+const ICON_ON='<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>';
+const ICON_OFF='<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>';
+function syncSound(){const b=$('#sound'),t=musicOn?'Turn music off':'Turn music on';b.setAttribute('aria-label',t);b.title=t;b.innerHTML=musicOn?ICON_ON:ICON_OFF;b.classList.toggle('off',!musicOn);}
+$('#sound').onclick=()=>{
+  musicOn=!musicOn;localStorage.setItem('music',musicOn?'on':'off');syncSound();initAudio();if(!ctx)return;
+  if(!musicOn){ramp(0,250);clearTimeout(pauseTimer);pauseTimer=setTimeout(()=>{if(!musicOn)audio.pause();},300);}
+  else if(musicActive)playMusic(500);
+  else{musicActive=true;playMusic(INTRO.MUSIC_FADE_IN);clearTimeout(stopTimer);stopTimer=setTimeout(fadeMusicOut,INTRO.MUSIC_STOP_AFTER_MAP);}
+};
+document.addEventListener('visibilitychange',()=>{if(ctx)document.hidden?ctx.suspend():ctx.resume();});
+syncSound();
+
+// ---------- intro ----------
+async function fade(el,to,ms){el.style.transition=`opacity ${ms}ms ease`;void el.offsetWidth;el.style.opacity=to;await sleep(ms);}
+function runSpark(ms){return new Promise(res=>{
+  const path=$('#sp'),L=path.getTotalLength(),g=$('#sg'),S=INTRO.SPARK_SIZE,N=16,cs=[];
+  g.innerHTML='';g.style.opacity=1;
+  for(let k=0;k<N;k++){const c=document.createElementNS('http://www.w3.org/2000/svg','circle');c.setAttribute('r',S*(1-k/N*.7));c.setAttribute('fill',k?INTRO.SPARK_COLOR:'#fff');c.setAttribute('opacity',(1-k/N)*.9);g.appendChild(c);cs.push(c);}
+  const t0=performance.now();
+  (function f(now){const t=Math.min(1,(now-t0)/ms);
+    cs.forEach((c,k)=>{const p=path.getPointAtLength(Math.max(0,t*L-k*S*1.4));c.setAttribute('cx',p.x);c.setAttribute('cy',p.y);});
+    t<1?requestAnimationFrame(f):res();})(t0);
+});}
+async function startIntro(){
+  const intro=$('#intro');
+  if(!INTRO.ENABLED){intro.remove();return;}
+  const svg=$('#sparkSvg');svg.setAttribute('viewBox',`0 0 ${PATH.W} ${PATH.H}`);svg.style.setProperty('--spark',INTRO.SPARK_COLOR);
+  svg.innerHTML=`<path id="sp" d="M${PATH.pts.map(p=>p.join(' ')).join('L')}" fill="none" stroke="none"/><g id="sg" style="opacity:0"></g>`;
+  $('#logoImg').src=asset(INTRO.STRAVA_IMAGE);
+  if(INTRO.REQUIRE_TAP){await new Promise(r=>$('#gate').addEventListener('click',r,{once:true}));initAudio();}
+  else{initAudio();addEventListener('pointerdown',()=>{if(ctx){ctx.resume();if(musicActive&&musicOn)audio.play().catch(()=>{});}},{once:true});}
+  $('#gate').remove();
+  musicActive=true;playMusic(INTRO.MUSIC_FADE_IN);
+  await sleep(INTRO.STRAVA_DELAY);await fade($('#logo'),1,INTRO.STRAVA_FADE_IN);
+  await sleep(INTRO.SPARK_START_DELAY);await runSpark(INTRO.SPARK_DURATION);
+  await sleep(INTRO.SPARK_FADE_DELAY);await fade($('#sg'),0,INTRO.SPARK_FADE_OUT);
+  await sleep(INTRO.STRAVA_FADE_OUT_DELAY);await fade($('#logo'),0,INTRO.STRAVA_FADE_OUT);
+  await sleep(INTRO.TITLE_DELAY);await fade($('#introTitle'),1,INTRO.TITLE_FADE_IN);
+  await sleep(INTRO.TITLE_HOLD);await fade(intro,0,INTRO.TITLE_FADE_OUT);
+  intro.remove(); // the map is now visible
+  clearTimeout(stopTimer);stopTimer=setTimeout(fadeMusicOut,INTRO.MUSIC_STOP_AFTER_MAP);
+}
+startIntro();
