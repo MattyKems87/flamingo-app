@@ -19,3 +19,8 @@ Share with anyone: `npm run build`, then upload the `dist` folder to Netlify, Ve
 - Map tiles use OpenFreeMap (free, no key). Change `CONFIG.STYLE` to use another style.
 - Place coordinates other than Media Design School are approximate: check them on the map.
 - Demo speed is `CONFIG.SPEED` metres per second.
+
+## Changes in v0.2
+Cancel button; tap a pin to preview its route and info; path stays until the card is closed; 16 fictional activities added in `src/data.js` (replace with real ones); 'Most popular' carousels ordered by the `POP` scores in `data.js`; burger menu on list pages; rotating or zooming keeps following the scooter (only panning stops it).
+- Hidden gems: edit `GEMS` in `src/data.js`. `at:` gems are found on arrival at that place; `ll:` gems are found if a trip passes within `GEM_RADIUS` metres. Collected gems reset on page reload.
+- Panning stops following immediately; rotating or zooming keeps following the scooter. Recentre resumes following.
