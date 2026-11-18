@@ -3,7 +3,7 @@
 export const CONFIG = {
   STYLE: 'https://tiles.openfreemap.org/styles/liberty',               // free vector map style, no API key
   ROUTER: 'https://routing.openstreetmap.de/routed-bike/route/v1/driving', // bike profile = prefers cycle lanes (demo server)
-  SPEED: 60,                                                            // demo scooter speed in metres per second
+  SPEED: 240,                                                            // demo scooter speed in metres per second
   BOUNDS: [[174.735, -36.875], [174.795, -36.825]]                         // limits panning to the CBD area
 };
 export const START = [174.75688, -36.84249]; // Media Design School, 10 Madden St
@@ -23,7 +23,7 @@ export const ITEMS = [
   { id: 'n-albert', type: 'nest', name: 'Albert Park Nest', ll: [174.7683, -36.8512], hook: 'Scooter and bike rack', tags: ['nest'], desc: 'A nest by Albert Park. Placeholder text.' },
   { id: 'n-sky', type: 'nest', name: 'Sky Tower Nest', ll: [174.7616, -36.8490], hook: 'Scooter and bike rack', tags: ['nest'], desc: 'A nest below the Sky Tower. Placeholder text.' },
   { id: 'n-kroad', type: 'nest', name: 'K Road Nest', ll: [174.7578, -36.8583], hook: 'Scooter and bike rack', tags: ['nest'], desc: 'A nest on Karangahape Road. Placeholder text.' },
-  { id: 'canvas', type: 'activity', name: 'Living Canvas', ll: [174.7691, -36.8447], hook: 'Art that moves with you', tags: ['outdoors'], desc: 'An interactive artwork in the pedestrian area beside Britomart. Placeholder description.' },
+  { id: 'canvas', type: 'activity', name: 'Living Canvas', ll: [174.7691, -36.8447], hook: 'Art that moves with you', tags: ['outdoors', 'free'], desc: 'An interactive artwork in the pedestrian area beside Britomart. Placeholder description.' },
   { id: 'gacha', type: 'activity', name: 'Gacha Machines', ll: [174.7641, -36.8490], hook: 'Win a surprise capsule toy', tags: [], desc: 'Rows of capsule toy machines. Placeholder description and position.' },
   { id: 'cutouts', type: 'activity', name: 'Head in a Hole Cutouts', ll: [174.7603, -36.8431], hook: 'Poke your head through and pose', tags: ['outdoors'], desc: 'Painted boards with face holes for silly photos. Placeholder description and position.' },
   { id: "arcade", type: 'activity', name: "Neon Alley Arcade", ll: [174.7667, -36.8445], hook: "Retro games under neon lights", tags: [], desc: "Retro games under neon lights. Fictional placeholder activity: replace with a real one." },
@@ -46,48 +46,55 @@ export const ITEMS = [
 // Popularity score (higher = earlier in the 'Most popular' carousels). Only items listed here appear there.
 export const POP = { sky: 10, viaduct: 9, wynyard: 9, mds: 8, albert: 7, gallery: 6, 'n-ferry': 5, canvas: 10, gacha: 9, cutouts: 8, arcade: 8, nightlane: 8, mural: 7, rooftop: 7, piano: 6, sunset: 6 };
 
-// Hidden gems. 'at' = collected when the scooter arrives at that item id; 'll' = collected if a trip passes within GEM_RADIUS metres.
-// Only some places have gems. Route gems are only found if the (random) route happens to pass them. Edit freely.
-export const GEM_RADIUS = 70;
-export const GEMS = [
-  { id: 'g-canvas', name: 'Living Canvas Gem', text: 'A shimmering tile was hidden in the artwork.', at: 'canvas' },
-  { id: 'g-gacha', name: 'Golden Capsule', text: 'A gold capsule rolled out of the machine.', at: 'gacha' },
-  { id: 'g-wynyard', name: 'Harbour Pearl', text: 'Something sparkled between the bridge planks.', at: 'wynyard' },
-  { id: 'g-sky', name: 'Skyline Shard', text: 'A glass-like shard was tucked at the foot of the tower.', at: 'sky' },
-  { id: 'g-maze', name: 'Maze Emerald', text: 'You found the green stone in the middle of the maze.', at: 'maze' },
-  { id: 'g-silo', name: 'Silo Spark', text: 'A spark of light was hiding by the nest.', at: 'n-silo' },
-  { id: 'g-mural', name: 'Mural Fragment', text: 'A tiny painted tile was set into the wall.', at: 'mural' },
-  { id: 'r-queen', name: 'Queen Street Glimmer', text: 'A glint on the footpath caught your eye as you rode past.', ll: [174.7650, -36.8480] },
-  { id: 'r-quay', name: 'Quay Street Coin', text: 'An odd old coin was lying by the kerb.', ll: [174.7627, -36.8431] },
-  { id: 'r-viaduct', name: 'Viaduct Whisper', text: 'You heard a faint chime near the water.', ll: [174.7600, -36.8441] },
-  { id: 'r-wynyard', name: 'Wynyard Ember', text: 'A warm glow flickered beside the path.', ll: [174.7590, -36.8418] },
-  { id: 'r-albert', name: 'Park Acorn', text: 'A golden acorn sat on a bench.', ll: [174.7690, -36.8505] }
-];
+// Collectibles: found at random during a trip (not tied to map positions). Each can only be collected once.
+export const COLLECT = {
+  CHANCE: 0.5,        // chance that a trip contains one collectible (0 to 1)
+  PERSIST: false
+};                          // remember collected items on this device (reset: run localStorage.removeItem('collected') in the browser console)
+const RAW = [["Special fast sneakers", "I wonder whom these belong to?"], ["Addison's tape message", "\"WAAAAAZZZZUUUPPP??!!!\""], ["Jocelyn's attendance sheet", "\"Let's take the attendance :D\""], ["Christophe's favourite sculpture", "He's been looking for this! Return it to him!"], ["Golden bike bell", "Ding! It still rings perfectly."], ["Lost umbrella", "Auckland is too windy anyway!"], ["Mystery postcard", "Greetings from a city that looks a lot like this one."], ["Vintage ferry ticket", "Valid for one trip across the harbour, long expired."], ["Pocket compass", "It only ever points toward good coffee."], ["Rainbow guitar pick", "A busker's lucky charm."], ["Tiny paper boat", "Folded with great care."], ["Chalk drawing fragment", "Part of a pavement masterpiece."], ["Jame's creative media tips", "These will come in handy for your summative!"], ["Lucky capsule toy", "Won from a gacha machine and never opened."], ["Jacob's ticket to Japan", "Return this to him! He needs it!"], ["Ethan's lost Wacom pen", "He should probably get this back lol"], ["Jim's Dominoes receipt", "A very generous order for all the students this Friday at MDS"], ["Film roll", "Thirty-six frames of unknown city adventures."], ["Pink feather", "Dropped by a very stylish flamingo."], ["Library card", "Overdue by about forty years."], ["Mini traffic cone", "A tiny hero of road works."], ["Busker's tip jar", "Jingling with coins and good vibes."], ["Mystery key", "It opens something, somewhere."], ["Souvenir snow globe", "Sunny skyline instead of snow."], ["Lost glove", "Waiting for its other half."], ["Vinyl record", "Side B is pure summer."], ["Harbour bridge model", "Perfect for a tiny scooter."], ["Rainbow lollipop", "Sticky but delightful."], ["Stray balloon", "It escaped from a birthday party."], ["Pocket sundial", "Useless on a cloudy day."], ["Secret handshake manual", "Page one: nod twice."], ["Cat-shaped keychain", "Meow."], ["Charging cable", "The most valuable thing in the city."], ["Ticket stub", "From a show everyone still talks about."], ["Matt's Guinness Zero", "All the taste, zero the alcohol!"], ["Treasure map scrap", "X marks a spot near a fountain."], ["Wind-up robot", "Walks in circles, proudly."], ["Lucky coin", "Heads you win, tails you win."], ["Sticker sheet", "Fifty tiny stars."], ["Polaroid photo", "A blurry but happy memory."], ["Origami crane", "One of a thousand."], ["Friendship bracelet", "Colours chosen with care."], ["Pocket mirror", "Smile, you're travelling."], ["Delivery note", "Left at the wrong door, delivered to you."], ["Moonlit seashell", "It hums when you hold it close."]];
+export const COLLECTIBLES = RAW.map(([title, text], i) => ({ id: 'c' + i, title, text }));
+
+// AI scooter riders wandering the city.
+// export const RIDERS = {
+//   SHOW: true, COUNT: 25, STAY_MIN: 3000, STAY_MAX: 20000, // ms spent at each stop (random, inclusive)
+//   SPEED: 20,                               // metres per second
+//   USE_ROUTING: true, ROUTE_GAP: 700
+// };        // false = straight lines (no routing server load); ROUTE_GAP = ms between route requests
+
+export const RIDERS = {
+  SHOW: true, COUNT: 25, STAY_MIN: 3000, STAY_MAX: 20000, // ms spent at each stop (random, inclusive)
+  SPEED: 25,                               // metres per second
+  USE_ROUTING: true, ROUTE_GAP: 2000
+};        // false = straight lines (no routing server load); ROUTE_GAP = ms between route requests
 
 // Intro sequence. All times are in milliseconds and all are safe to change.
+// export const INTRO = {
+//   ENABLED: true, REQUIRE_TAP: true,           // browsers block sound until a tap, so the intro starts on a "Tap to start" screen
+//   STRAVA_IMAGE: 'intro/strava_path.png',    // file in /public (if you replace it, re-run tools/trace_path.py)
+//   MUSIC_FILE: 'audio/Speedworld-The-Long-Run.mp3', MUSIC_VOLUME: 0.8, MUSIC_LOOP: true,
+//   MUSIC_FADE_IN: 0,
+//   MUSIC_FADE_OUT_ENABLED: false,             // false = music never fades out by itself (the sound button still works)
+//   MUSIC_STOP_AFTER_MAP: 20000, MUSIC_FADE_OUT: 3000,
+//   STRAVA_DELAY: 0, STRAVA_FADE_IN: 700,
+//   SPARK_START_DELAY: 300, SPARK_DURATION: 4000, SPARK_COLOR: '#ff4fc3', SPARK_SIZE: 9,
+//   SPARK_FADE_DELAY: 500, SPARK_FADE_OUT: 400,
+//   GLOW_UP: 200, GLOW_DOWN: 350, GLOW_COLOR: '#ff4fc3', // whole path lights up then dims right after the spark has faded
+//   STRAVA_FADE_OUT_DELAY: 500, STRAVA_FADE_OUT: 800,
+//   TITLE_DELAY: 500, TITLE_FADE_IN: 480, TITLE_HOLD: 1920, TITLE_FADE_OUT: 800
+// };
+
+
 export const INTRO = {
-  ENABLED: true,            // false = skip the intro and music completely
-  REQUIRE_TAP: true,        // browsers block sound until the user taps once, so the intro starts on a "Tap to start" screen
-  STRAVA_IMAGE: 'intro/strava_path.png',  // file in /public (if you replace it, re-run tools/trace_path.py)
-  // MUSIC_FILE:'audio/music.mp3',          // file in /public. MP3 or M4A (AAC) recommended
-  MUSIC_FILE: 'audio/EstraykC64Short.mp3',          // file in /public. MP3 or M4A (AAC) recommended
-  MUSIC_VOLUME: 0.8, MUSIC_LOOP: false,
-  MUSIC_FADE_IN: 2000,                    // starts when the user taps
-  // STRAVA_DELAY: 1000,                     // wait after tap before the image starts to fade in
-  STRAVA_DELAY: 0,                     // wait after tap before the image starts to fade in
-  // STRAVA_FADE_IN: 1200,
-  STRAVA_FADE_IN: 200,
-  SPARK_START_DELAY: 10,                 // wait after the image has faded in
-  // SPARK_DURATION: 4000,                   // time for the spark to travel the whole path ("a few seconds")
-  SPARK_DURATION: 1300,                   // time for the spark to travel the whole path ("a few seconds")
-  SPARK_COLOR: '#ff4fc3', SPARK_SIZE: 9,
-  // SPARK_FADE_DELAY: 500, SPARK_FADE_OUT: 400,        // after the spark arrives
-  SPARK_FADE_DELAY: 0, SPARK_FADE_OUT: 100,        // after the spark arrives
-  // STRAVA_FADE_OUT_DELAY: 500, STRAVA_FADE_OUT: 800,  // after the spark has faded
-  STRAVA_FADE_OUT_DELAY: 300, STRAVA_FADE_OUT: 400,  // after the spark has faded
-  // TITLE_DELAY: 500, TITLE_FADE_IN: 480, TITLE_HOLD: 1920, TITLE_FADE_OUT: 800, // "Time to leave the nest!" (same 3.2 s total as before)
-  TITLE_DELAY: 10, TITLE_FADE_IN: 180, TITLE_HOLD: 1000, TITLE_FADE_OUT: 200, // "Time to leave the nest!"
-  // MUSIC_STOP_AFTER_MAP: 20000,            // music starts fading out this long after the map appears
-  MUSIC_STOP_AFTER_MAP: 17000,            // music starts fading out this long after the map appears
-  MUSIC_FADE_OUT: 3000
+  ENABLED: true, REQUIRE_TAP: true,           // browsers block sound until a tap, so the intro starts on a "Tap to start" screen
+  STRAVA_IMAGE: 'intro/strava_path.png',    // file in /public (if you replace it, re-run tools/trace_path.py)
+  MUSIC_FILE: 'audio/Speedworld-The-Long-Run.mp3', MUSIC_VOLUME: 0.8, MUSIC_LOOP: true,
+  MUSIC_FADE_IN: 0,
+  MUSIC_FADE_OUT_ENABLED: false,             // false = music never fades out by itself (the sound button still works)
+  MUSIC_STOP_AFTER_MAP: 20000, MUSIC_FADE_OUT: 3000,
+  STRAVA_DELAY: 50, STRAVA_FADE_IN: 700,
+  SPARK_START_DELAY: 100, SPARK_DURATION: 2100, SPARK_COLOR: '#ff4fc3', SPARK_SIZE: 12,
+  SPARK_FADE_DELAY: 20, SPARK_FADE_OUT: 400,
+  GLOW_UP: 200, GLOW_DOWN: 350, GLOW_COLOR: '#ff4fc3', // whole path lights up then dims right after the spark has faded
+  STRAVA_FADE_OUT_DELAY: 500, STRAVA_FADE_OUT: 800,
+  TITLE_DELAY: 30, TITLE_FADE_IN: 380, TITLE_HOLD: 1000, TITLE_FADE_OUT: 300
 };
