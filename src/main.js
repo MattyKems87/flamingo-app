@@ -17,7 +17,7 @@ import '@material/web/progress/linear-progress.js';
 import '@material/web/ripple/ripple.js';
 import '@material/web/focus/md-focus-ring.js';
 import './style.css';
-import { CONFIG, START, ITEMS, POP, INTRO, RIDERS, COLLECT, COLLECTIBLES } from './data.js';
+import { CONFIG, START, ITEMS, POP, INTRO, RIDERS, COLLECT, COLLECTIBLES, PHOTOS } from './data.js';
 import { PATH } from './introPath.js';
 
 const $ = s => document.querySelector(s);
@@ -28,7 +28,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms)), asset = p => import.meta
 function dist(a, b) { const R = 6371e3, t = Math.PI / 180, x = Math.sin((b[1] - a[1]) * t / 2) ** 2 + Math.cos(a[1] * t) * Math.cos(b[1] * t) * Math.sin((b[0] - a[0]) * t / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(x)); }
 // Placeholder pictures: random black and white shapes, stable per id. Replace with your own images.
 function art(id) {
-  let h = 0; for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0; const r = () => (h = (h * 1664525 + 1013904223) >>> 0) / 4294967296;
+  if (PHOTOS[id]) return `<img src="${asset(PHOTOS[id])}" alt="" loading="lazy">`; let h = 0; for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0; const r = () => (h = (h * 1664525 + 1013904223) >>> 0) / 4294967296;
   const bg = r() < .5 ? '#fff' : '#1f1f1f', fg = bg === '#fff' ? '#1f1f1f' : '#fff'; let s = `<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="100" height="100" fill="${bg}"/>`;
   for (let i = 0; i < 3; i++) {
     const c = r() < .5 ? fg : '#9a9a9a', x = r() * 70 + 10, y = r() * 70 + 10, q = r() * 22 + 10, t = r();

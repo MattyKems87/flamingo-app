@@ -55,12 +55,6 @@ const RAW = [["Special fast sneakers", "I wonder whom these belong to?"], ["Addi
 export const COLLECTIBLES = RAW.map(([title, text], i) => ({ id: 'c' + i, title, text }));
 
 // AI scooter riders wandering the city.
-// export const RIDERS = {
-//   SHOW: true, COUNT: 25, STAY_MIN: 3000, STAY_MAX: 20000, // ms spent at each stop (random, inclusive)
-//   SPEED: 20,                               // metres per second
-//   USE_ROUTING: true, ROUTE_GAP: 700
-// };        // false = straight lines (no routing server load); ROUTE_GAP = ms between route requests
-
 export const RIDERS = {
   SHOW: true, COUNT: 25, STAY_MIN: 3000, STAY_MAX: 20000, // ms spent at each stop (random, inclusive)
   SPEED: 25,                               // metres per second
@@ -68,22 +62,6 @@ export const RIDERS = {
 };        // false = straight lines (no routing server load); ROUTE_GAP = ms between route requests
 
 // Intro sequence. All times are in milliseconds and all are safe to change.
-// export const INTRO = {
-//   ENABLED: true, REQUIRE_TAP: true,           // browsers block sound until a tap, so the intro starts on a "Tap to start" screen
-//   STRAVA_IMAGE: 'intro/strava_path.png',    // file in /public (if you replace it, re-run tools/trace_path.py)
-//   MUSIC_FILE: 'audio/Speedworld-The-Long-Run.mp3', MUSIC_VOLUME: 0.8, MUSIC_LOOP: true,
-//   MUSIC_FADE_IN: 0,
-//   MUSIC_FADE_OUT_ENABLED: false,             // false = music never fades out by itself (the sound button still works)
-//   MUSIC_STOP_AFTER_MAP: 20000, MUSIC_FADE_OUT: 3000,
-//   STRAVA_DELAY: 0, STRAVA_FADE_IN: 700,
-//   SPARK_START_DELAY: 300, SPARK_DURATION: 4000, SPARK_COLOR: '#ff4fc3', SPARK_SIZE: 9,
-//   SPARK_FADE_DELAY: 500, SPARK_FADE_OUT: 400,
-//   GLOW_UP: 200, GLOW_DOWN: 350, GLOW_COLOR: '#ff4fc3', // whole path lights up then dims right after the spark has faded
-//   STRAVA_FADE_OUT_DELAY: 500, STRAVA_FADE_OUT: 800,
-//   TITLE_DELAY: 500, TITLE_FADE_IN: 480, TITLE_HOLD: 1920, TITLE_FADE_OUT: 800
-// };
-
-
 export const INTRO = {
   ENABLED: true, REQUIRE_TAP: true,           // browsers block sound until a tap, so the intro starts on a "Tap to start" screen
   STRAVA_IMAGE: 'intro/strava_path.png',    // file in /public (if you replace it, re-run tools/trace_path.py)
@@ -92,9 +70,19 @@ export const INTRO = {
   MUSIC_FADE_OUT_ENABLED: false,             // false = music never fades out by itself (the sound button still works)
   MUSIC_STOP_AFTER_MAP: 20000, MUSIC_FADE_OUT: 3000,
   STRAVA_DELAY: 50, STRAVA_FADE_IN: 700,
-  SPARK_START_DELAY: 100, SPARK_DURATION: 2100, SPARK_COLOR: '#ff4fc3', SPARK_SIZE: 12,
+  SPARK_START_DELAY: 20, SPARK_DURATION: 2100, SPARK_COLOR: '#ff4fc3', SPARK_SIZE: 12,
   SPARK_FADE_DELAY: 20, SPARK_FADE_OUT: 400,
   GLOW_UP: 200, GLOW_DOWN: 350, GLOW_COLOR: '#ff4fc3', // whole path lights up then dims right after the spark has faded
   STRAVA_FADE_OUT_DELAY: 500, STRAVA_FADE_OUT: 800,
   TITLE_DELAY: 30, TITLE_FADE_IN: 380, TITLE_HOLD: 1000, TITLE_FADE_OUT: 300
+};
+
+// Real photos. Key = the item's id (see the ids in ITEMS above; collectibles are c0 to c44). Files go in public/images/places/.
+// Anything not listed here keeps its placeholder shapes. Example:  sky:'images/places/sky-tower.jpg',
+export const PHOTOS = {
+  mds: 'images/places/Media_Design_School_20240101_155810_02.jpg',
+  wynyard: 'images/places/wynyard.jpg',
+  sky: 'images/places/Sky_Tower,_Auckland_-_0206_(cropped).jpg',
+  c1: 'images/places/Addison.jpg',
+  // canvas:'images/places/living-canvas.jpg',
 };
